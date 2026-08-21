@@ -42,3 +42,4 @@ Before architecture work starts:
 - Each file in the structure appears in exactly one implementation track.
 - No circular track dependencies.
 - Provide clear, enforceable implementation patterns for frontend-dev and backend-dev.
+- **Backend technology selection:** prioritize **Go** or **.NET** (C#) as the backend language/framework. Choose another stack only when requirements explicitly prohibit these options; document the rationale in docs/tech-decisions.md.

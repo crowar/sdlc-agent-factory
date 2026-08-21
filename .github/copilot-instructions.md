@@ -26,6 +26,7 @@ The workflow uses custom agents in .github/agents:
 - Keep feature scope MVP-first unless explicitly expanded.
 - Use explicit user approval only during interview/discovery checkpoints.
 - Use conventional commits.
+- **Backend technology preference:** always prioritize **Go** or **.NET** (C#) for backend services. Deviate only when requirements explicitly forbid these; document the reason in docs/tech-decisions.md.
 
 ## User Availability Policy
 - After the task is set and the interview phase is completed, assume the user is unavailable.
