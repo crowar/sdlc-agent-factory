@@ -13,6 +13,7 @@
   copilot-instructions.md        инструкции оркестратора для Copilot
   agents/                        11 специализированных ролей (*.agent.md)
   prompts/                       3 оркестраторные команды (*.prompt.md)
+  skills/                        3 skills-обёртки для Agent mode
 docs/                            артефакты пайплайна (source of truth)
 ```
 
@@ -62,6 +63,9 @@ Copilot подхватит:
 - `.github/copilot-instructions.md`
 - агентов из `.github/agents/`
 - команды из `.github/prompts/`
+
+Prompt files работают как slash-команды в Chat. В Agent mode те же workflows
+доступны как skills из `.github/skills/`, включая Agent Host.
 
 ## Как проходит пайплайн
 

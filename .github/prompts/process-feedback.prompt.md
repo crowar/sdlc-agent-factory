@@ -1,7 +1,7 @@
 ---
 name: process-feedback
 description: Triage user feedback into backlog and run hotfix flow for P0 issues.
-agent: agent
+argument-hint: Provide the feedback, bug report, or backlog input to process.
 ---
 
 Process user feedback and convert it into prioritized actions.

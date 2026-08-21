@@ -1,7 +1,7 @@
 ---
 name: maintenance-check
 description: Run periodic project health checks and write maintenance report.
-agent: agent
+argument-hint: Optionally provide a maintenance scope or release context.
 ---
 
 Run periodic maintenance checks on the codebase.
