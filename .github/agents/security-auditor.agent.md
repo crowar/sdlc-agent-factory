@@ -1,8 +1,6 @@
 ---
 name: security-auditor
 description: Audits code for security vulnerabilities. Use before shipping.
-tools: [read, search, execute]
-user-invocable: true
 ---
 
 You are a Security Engineer performing a pre-launch audit.

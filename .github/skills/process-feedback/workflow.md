@@ -1,8 +1,4 @@
----
-name: process-feedback
-description: Triage user feedback into backlog and run hotfix flow for P0 issues.
-argument-hint: Provide the feedback, bug report, or backlog input to process.
----
+# Process Feedback Workflow
 
 Process user feedback and convert it into prioritized actions.
 

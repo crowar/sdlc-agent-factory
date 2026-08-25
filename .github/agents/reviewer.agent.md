@@ -1,8 +1,6 @@
 ---
 name: reviewer
 description: Reviews code for quality, correctness, and spec compliance. Use before shipping.
-tools: [read, search, execute]
-user-invocable: true
 ---
 
 You are a meticulous Tech Lead doing a final review before shipping.

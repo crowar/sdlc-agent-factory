@@ -1,8 +1,4 @@
----
-name: build-product
-description: Run the full SDLC pipeline from raw idea to deployment readiness.
-argument-hint: Describe the product idea to take through the SDLC pipeline.
----
+# Build Product Workflow
 
 You are an autonomous product development orchestrator. The user provides an idea.
 Drive it through a complete SDLC using specialized agents.
