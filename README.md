@@ -3,8 +3,8 @@
 Переиспользуемый multi-agent конвейер полного цикла разработки (SDLC):
 от идеи до продакшена, затем разбор фидбека и поддержка.
 
-Адаптирован для GitHub Copilot (VS Code custom agents + prompt files)
-для запуска multi-agent workflow в VS Code.
+Адаптирован для GitHub Copilot (custom agents + agent skills)
+для запуска multi-agent workflow в CLI и VS Code.
 
 ## Что в репозитории
 
@@ -12,12 +12,82 @@
 .github/
   copilot-instructions.md        инструкции оркестратора для Copilot
   agents/                        11 специализированных ролей (*.agent.md)
-  prompts/                       3 оркестраторные команды (*.prompt.md)
-  skills/                        3 skills-обёртки для Agent mode
+  skills/                        3 самодостаточных workflow skills
 docs/                            артефакты пайплайна (source of truth)
 ```
 
-Примечание: в текущей версии репозитория используются project-local настройки `.github/*`.
+Project-local настройки `.github/*` можно установить в пользовательский профиль,
+чтобы они были доступны во всех сессиях и репозиториях.
+
+## Глобальная установка
+
+Для GitHub Copilot CLI:
+
+```bash
+./scripts/install-global.sh copilot
+```
+
+Установщик создаёт символические ссылки:
+
+- agents в `~/.copilot/agents/`;
+- skills в `~/.copilot/skills/`.
+
+Поэтому изменения в этом репозитории сразу доступны новым сессиям без
+повторного копирования файлов. Репозиторий нельзя перемещать или удалять, пока
+используются созданные ссылки.
+
+Перезапустите Copilot CLI для загрузки agents. В уже открытой сессии skills
+можно обновить командой `/skills reload`.
+
+Существующие пользовательские файлы не перезаписываются. Для осознанного
+обновления ранее установленных файлов используйте:
+
+```bash
+./scripts/install-global.sh copilot --force
+```
+
+Проверить действия без записи:
+
+```bash
+./scripts/install-global.sh all --dry-run
+```
+
+Для Windows используйте PowerShell:
+
+```powershell
+.\scripts\install-global.ps1 -Provider copilot
+.\scripts\install-global.ps1 -Provider all -DryRun
+```
+
+Создание символических ссылок в Windows требует включённого Developer Mode или
+запуска PowerShell от имени администратора. Для замены существующих файлов
+передайте `-Force`.
+
+## Codex, Gemini и Junie
+
+Skills используют открытый формат `SKILL.md`, поэтому один и тот же workflow
+устанавливается без изменения содержимого. Agents требуют адаптации формата:
+
+| Инструмент | Skills | Agents |
+|---|---|---|
+| Copilot CLI | `~/.copilot/skills/` | нативно в `~/.copilot/agents/*.agent.md` |
+| Codex CLI | `~/.agents/skills/` | отдельного declarative agent-формата нет; роли устанавливаются как skills |
+| Gemini CLI | `~/.gemini/skills/` | нативно в `~/.gemini/agents/*.md` |
+| Junie CLI | `~/.junie/skills/` | нативно в `~/.junie/agents/*.md` |
+
+Установка для конкретного инструмента или для всех сразу:
+
+```bash
+./scripts/install-global.sh codex
+./scripts/install-global.sh gemini
+./scripts/install-global.sh junie
+./scripts/install-global.sh all
+```
+
+Gemini и Junie читают те же agent-файлы через ссылки с нативным расширением
+`.md`. Agent-файлы используют общий frontmatter (`name` и `description`);
+Copilot, Gemini и Junie применяют стандартный доступ к инструментам. Для Codex
+каждая роль становится вызываемым skill, но не изолированным subagent.
 
 ## 11 агентов
 
@@ -33,7 +103,7 @@ docs/                            артефакты пайплайна (source o
 - security-auditor
 - feedback-triage
 
-## 3 команды (prompt files)
+## 3 команды (skills)
 
 - `/build-product` — полный pipeline от идеи до deployment readiness
 - `/process-feedback` — триаж фидбека и hotfix flow для P0
@@ -62,10 +132,9 @@ Copilot подхватит:
 
 - `.github/copilot-instructions.md`
 - агентов из `.github/agents/`
-- команды из `.github/prompts/`
+- workflows из `.github/skills/`
 
-Prompt files работают как slash-команды в Chat. В Agent mode те же workflows
-доступны как skills из `.github/skills/`, включая Agent Host.
+Skills работают как slash-команды в Agent mode, включая Agent Host.
 
 ## Как проходит пайплайн
 

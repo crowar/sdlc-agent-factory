@@ -1,8 +1,4 @@
----
-name: maintenance-check
-description: Run periodic project health checks and write maintenance report.
-argument-hint: Optionally provide a maintenance scope or release context.
----
+# Maintenance Check Workflow
 
 Run periodic maintenance checks on the codebase.
 
