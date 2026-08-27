@@ -3,8 +3,9 @@
 Переиспользуемый multi-agent конвейер полного цикла разработки (SDLC):
 от идеи до продакшена, затем разбор фидбека и поддержка.
 
-Адаптирован для GitHub Copilot (custom agents + agent skills)
-для запуска multi-agent workflow в CLI и VS Code.
+Адаптирован для GitHub Copilot и Codex. В Copilot используются declarative
+custom agents; в Codex один orchestrator создаёт изолированные subagents через
+runtime delegation API.
 
 ## Что в репозитории
 
@@ -13,6 +14,10 @@
   copilot-instructions.md        инструкции оркестратора для Copilot
   agents/                        11 специализированных ролей (*.agent.md)
   skills/                        3 самодостаточных workflow skills
+.codex/
+  skills/autonomous-sdlc/        Codex-native orchestrator и routing protocol
+sdlc.skills.yaml                 декларативный реестр stage-specific skills
+sdlc.roles.yaml                  необязательные role briefs для Codex subagents
 docs/                            артефакты пайплайна (source of truth)
 ```
 
@@ -63,6 +68,14 @@ Project-local настройки `.github/*` можно установить в 
 .\scripts\install-global.ps1 -Provider all -DryRun
 ```
 
+Для изолированной проверки или собственного каталога назначения задайте
+`SDLC_INSTALL_HOME`; переменная поддерживается Bash- и PowerShell-установщиками:
+
+```powershell
+$env:SDLC_INSTALL_HOME = Join-Path $env:TEMP "sdlc-agent-factory-test"
+.\scripts\install-global.ps1 -Provider codex
+```
+
 Создание символических ссылок в Windows требует включённого Developer Mode или
 запуска PowerShell от имени администратора. Для замены существующих файлов
 передайте `-Force`.
@@ -75,7 +88,7 @@ Skills используют открытый формат `SKILL.md`, поэто
 | Инструмент | Skills | Agents |
 |---|---|---|
 | Copilot CLI | `~/.copilot/skills/` | нативно в `~/.copilot/agents/*.agent.md` |
-| Codex CLI | `~/.agents/skills/` | отдельного declarative agent-формата нет; роли устанавливаются как skills |
+| Codex CLI | `~/.agents/skills/` | orchestrator динамически вызывает runtime subagents |
 | Gemini CLI | `~/.gemini/skills/` | нативно в `~/.gemini/agents/*.md` |
 | Junie CLI | `~/.junie/skills/` | нативно в `~/.junie/agents/*.md` |
 
@@ -89,9 +102,34 @@ Skills используют открытый формат `SKILL.md`, поэто
 ```
 
 Gemini и Junie читают те же agent-файлы через ссылки с нативным расширением
-`.md`. Agent-файлы используют общий frontmatter (`name` и `description`);
-Copilot, Gemini и Junie применяют стандартный доступ к инструментам. Для Codex
-каждая роль становится вызываемым skill, но не изолированным subagent.
+`.md`. Agent-файлы используют общий frontmatter (`name` и `description`). Для
+Codex `.github/agents` остаются библиотекой role briefs: они не устанавливаются
+как псевдо-agents. Вместо этого installer помещает ссылки на них внутрь references
+orchestrator'а. Перед `spawn_agent` Codex загружает подходящий brief через
+`sdlc.roles.yaml`. Настоящий subagent существует только после runtime-вызова.
+
+Если подходящей роли или файла нет, этап не блокируется: Codex записывает
+`role_brief: standard_fallback`, формирует обычный bounded task из dossier и
+stage gate и продолжает выполнение. Так же работают дополнительные роли,
+отсутствующие в `.github/agents`, например challenger или release guardian.
+
+## Запуск в Codex
+
+Установите skills и перезапустите сессию Codex, чтобы обновился каталог:
+
+```bash
+./scripts/install-global.sh codex
+```
+
+Затем попросите Codex выполнить `$autonomous-sdlc` или `$build-product`. При
+наличии delegation tools orchestrator создаёт subagents, сохраняет их canonical
+IDs и ownership в `docs/sdlc/progress.md`, присоединяет результаты через
+`wait_agent` и независимо проверяет артефакты. Если delegation недоступен,
+workflow обязан честно обозначить single-agent degraded mode.
+
+Skills не создают subagents сами по себе. Установка нового skill во время уже
+идущей сессии также не гарантирует его появление в каталоге этой сессии, поэтому
+required skills проверяются до начала побочных эффектов.
 
 ## 11 агентов
 
@@ -142,20 +180,21 @@ Skills работают как slash-команды в Agent mode, включа�
 
 ## Как проходит пайплайн
 
-1. Skill Readiness Gate: перед каждым агентом проверка знаний и при необходимости `find-skills`.
-1. Business Interview: `grill-me` -> `docs/interview-notes.md`.
-1. Discovery: `product-strategist` -> `docs/validated-idea.md`.
-1. Specification and UX (параллельно): `spec-writer` + `ux-designer`.
+1. Preflight: проверка `sdlc.skills.yaml`, обязательных skills, delegation capability и authority boundaries.
+1. Business Interview и единый autonomous handoff -> `docs/sdlc/task-dossier.md`.
+1. Discovery и challenge требований реальными bounded subagents.
+1. Specification и UX: параллельно только от общего dossier либо последовательно при зависимости UX от requirements.
 1. Architecture: `architect` -> architecture, ADR, implementation plan, API contract, development patterns.
 1. Scaffolding and GitHub: `devops`.
-1. Parallel Implementation: `backend-dev` и `frontend-dev` по трекам с опорой на паттерны архитектора.
+1. Implementation: последовательно в общем worktree либо параллельно в отдельных worktrees с непересекающимся ownership.
 1. Testing: `test-engineer` (test cases, toolset, execution report).
 1. Product Verification: для web используются `agent-browser` и `playwright-cli`.
-1. Review and Security (параллельно): `reviewer` + `security-auditor`.
-1. Deploy: `devops`.
+1. Review and Security (параллельно, read-only): независимые `reviewer` + `security-auditor`.
+1. Release guardian: `release_candidate_ready`, авторизованный `deployed_verified` или `blocked_external_authority`.
 1. Post-launch: `/process-feedback`, `/maintenance-check`.
 
-Все фазы обязаны обновлять артефакты в `docs/`.
+Все фазы используют `docs/sdlc/` как durable handoff. Общие progress и decision
+logs изменяет только orchestrator.
 
 ## Обязательные навыки и рекомендации
 

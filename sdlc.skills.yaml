@@ -1,0 +1,27 @@
+# Skills are loaded in list order at the mapped SDLC stages.
+version: 1
+skills:
+  - id: grill-me
+    path: .codex/skills/grill-me/SKILL.md
+    stages: [intake]
+    required: true
+    enabled: true
+
+  - id: grilling
+    path: .codex/skills/grilling/SKILL.md
+    stages: [intake]
+    required: true
+    enabled: true
+
+  - id: autonomous-sdlc
+    path: .codex/skills/autonomous-sdlc/SKILL.md
+    stages: [orchestration]
+    required: true
+    enabled: true
+
+# Add project-specific skills with one block:
+#  - id: example
+#    path: .codex/skills/example/SKILL.md
+#    stages: [intake, testing]
+#    required: false
+#    enabled: true

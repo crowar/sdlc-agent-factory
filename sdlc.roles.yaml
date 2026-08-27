@@ -1,0 +1,47 @@
+# Optional role knowledge for Codex subagents. Missing roles never block a stage.
+version: 1
+roles:
+  - id: product-strategist
+    path: .github/agents/product-strategist.agent.md
+    stages: [discovery]
+    enabled: true
+  - id: spec-writer
+    path: .github/agents/spec-writer.agent.md
+    stages: [specification]
+    enabled: true
+  - id: ux-designer
+    path: .github/agents/ux-designer.agent.md
+    stages: [ux]
+    enabled: true
+  - id: architect
+    path: .github/agents/architect.agent.md
+    stages: [architecture]
+    enabled: true
+  - id: devops
+    path: .github/agents/devops.agent.md
+    stages: [foundation, release]
+    enabled: true
+  - id: backend-dev
+    path: .github/agents/backend-dev.agent.md
+    stages: [implementation]
+    enabled: true
+  - id: frontend-dev
+    path: .github/agents/frontend-dev.agent.md
+    stages: [implementation]
+    enabled: true
+  - id: test-engineer
+    path: .github/agents/test-engineer.agent.md
+    stages: [testing]
+    enabled: true
+  - id: reviewer
+    path: .github/agents/reviewer.agent.md
+    stages: [review]
+    enabled: true
+  - id: security-auditor
+    path: .github/agents/security-auditor.agent.md
+    stages: [security-review]
+    enabled: true
+  - id: feedback-triage
+    path: .github/agents/feedback-triage.agent.md
+    stages: [maintenance]
+    enabled: true

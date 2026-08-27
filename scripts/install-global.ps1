@@ -8,6 +8,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# Use a dedicated destination override for CI/tests without repurposing HOME.
+$TargetHome = if ($env:SDLC_INSTALL_HOME) { $env:SDLC_INSTALL_HOME } else { $HOME }
 
 if ($Provider -contains "all") {
     $Provider = @("copilot", "codex", "gemini", "junie")
@@ -84,33 +86,43 @@ function Get-AgentName {
 }
 
 function Install-Copilot {
-    Install-WorkflowSkills (Join-Path $HOME ".copilot/skills")
+    Install-WorkflowSkills (Join-Path $TargetHome ".copilot/skills")
     Get-ChildItem (Join-Path $Root ".github/agents/*.agent.md") -File | ForEach-Object {
-        Install-SymbolicLink $_.FullName (Join-Path $HOME ".copilot/agents/$($_.Name)")
+        Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".copilot/agents/$($_.Name)")
     }
 }
 
 function Install-Codex {
-    Install-WorkflowSkills (Join-Path $HOME ".agents/skills")
+    Install-WorkflowSkills (Join-Path $TargetHome ".agents/skills")
+    $CodexSkills = Join-Path $Root ".codex/skills"
+    Get-ChildItem $CodexSkills -Directory | ForEach-Object {
+        $Skill = $_
+        Get-ChildItem $Skill.FullName -File -Recurse | ForEach-Object {
+            # Compatible with Windows PowerShell 5.1, where Path.GetRelativePath
+            # is unavailable. Every enumerated file is guaranteed to be a child.
+            $Relative = $_.FullName.Substring($Skill.FullName.Length) -replace '^[\\/]+', ''
+            Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".agents/skills/$($Skill.Name)/$Relative")
+        }
+    }
     Get-ChildItem (Join-Path $Root ".github/agents/*.agent.md") -File | ForEach-Object {
         $Name = Get-AgentName $_
-        Install-SymbolicLink $_.FullName (Join-Path $HOME ".agents/skills/$Name/SKILL.md")
+        Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".agents/skills/autonomous-sdlc/references/roles/$Name.agent.md")
     }
 }
 
 function Install-Gemini {
-    Install-WorkflowSkills (Join-Path $HOME ".gemini/skills")
+    Install-WorkflowSkills (Join-Path $TargetHome ".gemini/skills")
     Get-ChildItem (Join-Path $Root ".github/agents/*.agent.md") -File | ForEach-Object {
         $Name = Get-AgentName $_
-        Install-SymbolicLink $_.FullName (Join-Path $HOME ".gemini/agents/$Name.md")
+        Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".gemini/agents/$Name.md")
     }
 }
 
 function Install-Junie {
-    Install-WorkflowSkills (Join-Path $HOME ".junie/skills")
+    Install-WorkflowSkills (Join-Path $TargetHome ".junie/skills")
     Get-ChildItem (Join-Path $Root ".github/agents/*.agent.md") -File | ForEach-Object {
         $Name = Get-AgentName $_
-        Install-SymbolicLink $_.FullName (Join-Path $HOME ".junie/agents/$Name.md")
+        Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".junie/agents/$Name.md")
     }
 }
 

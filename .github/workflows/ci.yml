@@ -51,13 +51,36 @@ jobs:
             bash -n "$script"
           done
 
+      - name: Validate Codex SDLC contract
+        run: ./scripts/validate-sdlc.sh
+
       - name: Smoke-test Bash installer
         env:
-          HOME: ${{ runner.temp }}/installer-home
+          SDLC_INSTALL_HOME: ${{ runner.temp }}/installer-home
         run: ./scripts/install-global.sh all --dry-run
+
+      - name: Smoke-test Codex installation topology
+        run: |
+          export SDLC_INSTALL_HOME="$(mktemp -d)"
+          ./scripts/install-global.sh codex
+          test -f "$SDLC_INSTALL_HOME/.agents/skills/autonomous-sdlc/SKILL.md"
+          test -f "$SDLC_INSTALL_HOME/.agents/skills/autonomous-sdlc/references/subagent-routing.md"
+          test -f "$SDLC_INSTALL_HOME/.agents/skills/autonomous-sdlc/references/role-routing.md"
+          test -f "$SDLC_INSTALL_HOME/.agents/skills/autonomous-sdlc/references/roles/architect.agent.md"
+          test ! -e "$SDLC_INSTALL_HOME/.agents/skills/backend-dev/SKILL.md"
 
       - name: Validate and smoke-test PowerShell installer
         shell: pwsh
         env:
-          HOME: ${{ runner.temp }}/installer-home
+          SDLC_INSTALL_HOME: ${{ runner.temp }}/installer-home
         run: ./scripts/install-global.ps1 -Provider all -DryRun
+
+      - name: Smoke-test PowerShell Codex installation topology
+        shell: pwsh
+        run: |
+          $env:SDLC_INSTALL_HOME = Join-Path $env:RUNNER_TEMP "codex-pwsh-home"
+          ./scripts/install-global.ps1 -Provider codex
+          if (-not (Test-Path -LiteralPath (Join-Path $env:SDLC_INSTALL_HOME ".agents/skills/autonomous-sdlc/SKILL.md") -PathType Leaf)) { throw "Missing autonomous-sdlc skill" }
+          if (-not (Test-Path -LiteralPath (Join-Path $env:SDLC_INSTALL_HOME ".agents/skills/autonomous-sdlc/references/role-routing.md") -PathType Leaf)) { throw "Missing role routing" }
+          if (-not (Test-Path -LiteralPath (Join-Path $env:SDLC_INSTALL_HOME ".agents/skills/autonomous-sdlc/references/roles/architect.agent.md") -PathType Leaf)) { throw "Missing architect role brief" }
+          if (Test-Path -LiteralPath (Join-Path $env:SDLC_INSTALL_HOME ".agents/skills/backend-dev/SKILL.md")) { throw "Role was incorrectly installed as a skill" }

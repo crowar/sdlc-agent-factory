@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET_HOME="${SDLC_INSTALL_HOME:-$HOME}"
 PROVIDERS=()
 FORCE=0
 DRY_RUN=0
@@ -15,7 +16,7 @@ Link this repository's skills and agents into user-level configuration.
 The default provider is copilot.
 
   copilot  Native agents and workflow skills
-  codex    Workflow skills plus agent roles represented as skills
+  codex    Workflow skills plus the Codex-native subagent orchestrator
   gemini   Native subagents and workflow skills
   junie    Native subagents and workflow skills
   all      Install for every provider
@@ -85,36 +86,43 @@ install_workflow_skills() {
 
 install_copilot() {
   local source
-  install_workflow_skills "$HOME/.copilot/skills"
+  install_workflow_skills "$TARGET_HOME/.copilot/skills"
   for source in "$ROOT"/.github/agents/*.agent.md; do
-    install_link "$source" "$HOME/.copilot/agents/$(basename "$source")"
+    install_link "$source" "$TARGET_HOME/.copilot/agents/$(basename "$source")"
   done
 }
 
 install_codex() {
-  local source name
-  install_workflow_skills "$HOME/.agents/skills"
+  local skill_dir source relative skill role
+  install_workflow_skills "$TARGET_HOME/.agents/skills"
+  for skill_dir in "$ROOT"/.codex/skills/*; do
+    skill="$(basename "$skill_dir")"
+    while IFS= read -r source; do
+      relative="${source#"$skill_dir/"}"
+      install_link "$source" "$TARGET_HOME/.agents/skills/$skill/$relative"
+    done < <(find "$skill_dir" -type f -print)
+  done
   for source in "$ROOT"/.github/agents/*.agent.md; do
-    name="$(basename "$source" .agent.md)"
-    install_link "$source" "$HOME/.agents/skills/$name/SKILL.md"
+    role="$(basename "$source" .agent.md)"
+    install_link "$source" "$TARGET_HOME/.agents/skills/autonomous-sdlc/references/roles/$role.agent.md"
   done
 }
 
 install_gemini() {
   local source name
-  install_workflow_skills "$HOME/.gemini/skills"
+  install_workflow_skills "$TARGET_HOME/.gemini/skills"
   for source in "$ROOT"/.github/agents/*.agent.md; do
     name="$(basename "$source" .agent.md)"
-    install_link "$source" "$HOME/.gemini/agents/$name.md"
+    install_link "$source" "$TARGET_HOME/.gemini/agents/$name.md"
   done
 }
 
 install_junie() {
   local source name
-  install_workflow_skills "$HOME/.junie/skills"
+  install_workflow_skills "$TARGET_HOME/.junie/skills"
   for source in "$ROOT"/.github/agents/*.agent.md; do
     name="$(basename "$source" .agent.md)"
-    install_link "$source" "$HOME/.junie/agents/$name.md"
+    install_link "$source" "$TARGET_HOME/.junie/agents/$name.md"
   done
 }
 

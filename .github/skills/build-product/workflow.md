@@ -1,98 +1,39 @@
 # Build Product Workflow
 
-You are an autonomous product development orchestrator. The user provides an idea.
-Drive it through a complete SDLC using specialized agents.
+Drive the user's idea through discovery, specification, architecture, implementation, independent verification, and release handoff.
 
-After PHASE 0 interview is completed, assume the user is unavailable.
-Do not request additional approvals. Continue autonomously to final delivery.
+For Codex, `.codex/skills/autonomous-sdlc/SKILL.md` and its references are the normative execution protocol. Use runtime `spawn_agent` and join operations for real subagents; loading `.github/agents/*.agent.md` or an installed role skill only provides a role brief.
 
-## SETUP
-- Create docs/ if missing.
-- Create docs/progress.md.
-- Create docs/skills-log.md.
-- Update progress.md after each phase.
+## Setup and handoff
 
-## MANDATORY SKILL READINESS GATE
-Before every specialized agent invocation:
-1. Ask whether the agent has enough knowledge for the assigned task.
-2. If uncertain or missing, discover and install the needed skills first.
-3. Use skill discovery command:
-     - `npx skills add https://github.com/vercel-labs/skills --skill find-skills`
-4. Record decisions and installed skills in docs/skills-log.md.
+- Create durable state under `docs/sdlc/`: `task-dossier.md`, `progress.md`, `decision-log.md`, and `final-report.md`.
+- Perform one complete business interview and confirm the dossier once.
+- After confirmation, assume the user is unavailable for ordinary decisions.
+- Load enabled stage skills from `sdlc.skills.yaml` in order. Missing required skills fail closed before side effects; optional skills are logged and skipped.
 
-## PHASE 0: BUSINESS INTERVIEW [Interactive]
-- Install and use discovery interview skill:
-    - `npx skills add https://github.com/mattpocock/skills --skill grill-me`
-- Conduct structured business interview to gather complete context.
-- Produce docs/interview-notes.md with:
-    - business goals, constraints, success criteria, assumptions, risks.
-- CHECKPOINT: ask Approve interview context? [yes/edit/redo]
+## Agent routing
 
-## PHASE 1: DISCOVERY [Interactive]
-- Use agent: product-strategist.
-- Input: user raw idea and docs/interview-notes.md.
-- Wait for docs/validated-idea.md.
-- Do not pause for approval. Log summary to docs/progress.md and continue.
+- The orchestrator assesses readiness before spawn; it does not ask a nonexistent child whether it has enough knowledge.
+- Each child receives a bounded task with exact inputs, output contract, access mode, ownership, forbidden scope, checks, and completion criteria.
+- Enrich that task from `sdlc.roles.yaml` or a bundled `.github/agents` role brief when available. A missing role is logged as `standard_fallback` and never blocks the stage.
+- Track canonical agent IDs, attempts, ownership, status, evidence, and next action in `docs/sdlc/progress.md`.
+- Join children and inspect their artifacts. Retry once through the same child with evidence and a narrower brief, then re-plan.
+- Parallelize only independent read-only work or disjoint writers in separate worktrees. Serialize writers in a shared worktree.
+- Only the orchestrator updates shared progress and decision logs.
+- An author cannot approve its own work. Reviewer, security, test, architecture review, and release guardian roles must be independent.
 
-## PHASE 2: SPECIFICATION AND UX [Parallel]
-Run in parallel:
-1. spec-writer: Read docs/validated-idea.md and produce requirements and stories.
-2. ux-designer: Read docs/validated-idea.md and produce wireframes and UX flows.
-- Do not pause for approval. Log counts in docs/progress.md and continue.
+## Stages
 
-## PHASE 3: ARCHITECTURE
-- Use architect.
-- Read all docs in docs/.
-- Produce docs/architecture.md, docs/tech-decisions.md,
-    docs/implementation-plan.md, docs/api-contract.md, docs/development-patterns.md.
-- Do not pause for approval. Log architecture summary in docs/progress.md and continue.
+1. Discovery and confirmed autonomous handoff.
+2. Testable specification, UX, and an independent ambiguity challenge.
+3. Architecture, threat model, implementation ownership, rollback, and independent architecture review.
+4. Reproducible scaffold and CI-equivalent local checks.
+5. Dependency-ordered implementation with focused tests.
+6. Independent system verification against acceptance criteria.
+7. Parallel read-only correctness and security reviews; targeted fixes and recheck.
+8. Independent release guardian verdict.
+9. Final report and resumable handoff.
 
-## PHASE 4: SCAFFOLDING AND GITHUB
-- Use devops.
-- Read architecture and implementation plan.
-- Initialize scaffold, git workflow, and CI/CD.
+Deployment, protected-branch changes, paid resources, DNS, or other external mutations require explicit authority. Otherwise finish a release candidate or use `blocked_external_authority`; never claim an unverified deployment.
 
-## PHASE 5: PARALLEL IMPLEMENTATION
-- Read docs/implementation-plan.md.
-- For each track, assign backend-dev or frontend-dev.
-- Respect track dependencies.
-- Run checks and integrate into develop.
-
-## PHASE 6: TESTING
-- Use test-engineer for integration, E2E, accessibility, performance tests.
-- Fix blocking failures through targeted implementation tasks.
-
-## PHASE 6.5: PRODUCT VERIFICATION
-- Validate release readiness based on completed tests and acceptance criteria.
-- If this is a web application, install and use:
-    - `npx skills add https://github.com/vercel-labs/agent-browser --skill agent-browser`
-    - `npx skills add https://github.com/microsoft/playwright-cli --skill playwright-cli`
-- Run scenario-based browser validation and capture evidence.
-- Produce docs/product-readiness.md with GO/NO-GO decision and rationale.
-
-## PHASE 7: REVIEW AND SECURITY [Parallel]
-Run in parallel:
-1. reviewer.
-2. security-auditor.
-- If verdict is FIX-THEN-SHIP, fix and re-run review.
-- If NEEDS-REWORK, report and stop.
-
-## PHASE 8: DEPLOY
-- Use devops.
-- Merge develop to main, deploy, verify post-deploy.
-
-## COMPLETION REPORT
-Include:
-- Total files created.
-- Test count and coverage summary.
-- Delivered feature summary.
-- Known issues and V2 items.
-- Skill usage summary from docs/skills-log.md.
-- Readiness verdict reference from docs/product-readiness.md.
-- Blockers encountered, applied fallbacks, and residual risks.
-
-## RULES
-- Every phase writes docs artifacts.
-- Keep progress logs concise and machine-readable in docs/progress.md.
-- Retry a failed agent once with clearer instructions, then escalate.
-- Use conventional commits.
+If Codex delegation is unavailable, state that execution is single-agent degraded mode. Never report role-play or role skills as completed multi-agent work.
