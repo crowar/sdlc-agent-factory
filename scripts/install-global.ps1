@@ -50,8 +50,15 @@ function Install-SymbolicLink {
 
     $Parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Path $Parent -Force | Out-Null
-    New-Item -ItemType SymbolicLink -Path $Destination -Target $Source | Out-Null
-    Write-Host "linked $Destination -> $Source"
+    try {
+        New-Item -ItemType SymbolicLink -Path $Destination -Target $Source -ErrorAction Stop | Out-Null
+        Write-Host "linked $Destination -> $Source"
+    }
+    catch {
+        # Symlink creation needs admin rights or Developer Mode on Windows; fall back to a copy.
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+        Write-Warning "No permission to create symlinks (enable Windows Developer Mode or run as admin for live links). Copied $Destination instead; re-run after editing sources to refresh it."
+    }
 }
 
 function Install-WorkflowSkills {
