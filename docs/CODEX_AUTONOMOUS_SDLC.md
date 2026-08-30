@@ -34,9 +34,12 @@ brief, но не регистрируются как отдельные skills �
 
 ```bash
 ./scripts/validate-sdlc.sh
+./scripts/validate-codex-plugin.sh
 ./scripts/install-global.sh codex --dry-run
 ```
 
-CI дополнительно выполняет реальную установку в временный `HOME` и проверяет,
-что установлен orchestrator с routing references, а role briefs не появились как
-псевдо-agent skills.
+CI дополнительно проверяет синхронизацию шести skills внутри plugin, manifest
+marketplace, реальную установку в временный `HOME`, routing references и то, что
+role briefs не появились как псевдо-agent skills. Обычный запуск установщика
+также регистрирует локальный marketplace, устанавливает plugin и проверяет его
+статус через `codex plugin list`.

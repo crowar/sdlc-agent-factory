@@ -10,6 +10,8 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 # Use a dedicated destination override for CI/tests without repurposing HOME.
 $TargetHome = if ($env:SDLC_INSTALL_HOME) { $env:SDLC_INSTALL_HOME } else { $HOME }
+$CodexPluginName = "sdlc-agent-factory"
+$CodexMarketplaceName = "sdlc-agent-factory-local"
 
 if ($Provider -contains "all") {
     $Provider = @("copilot", "codex", "gemini", "junie")
@@ -93,6 +95,7 @@ function Install-Copilot {
 }
 
 function Install-Codex {
+    Test-CodexPluginPackage
     Install-WorkflowSkills (Join-Path $TargetHome ".agents/skills")
     $CodexSkills = Join-Path $Root ".codex/skills"
     Get-ChildItem $CodexSkills -Directory | ForEach-Object {
@@ -108,6 +111,98 @@ function Install-Codex {
         $Name = Get-AgentName $_
         Install-SymbolicLink $_.FullName (Join-Path $TargetHome ".agents/skills/autonomous-sdlc/references/roles/$Name.agent.md")
     }
+
+    Test-CodexSkills
+    Install-CodexPlugin
+}
+
+function Test-CodexPluginPackage {
+    $PluginRoot = Join-Path $Root "plugins/$CodexPluginName"
+    $PluginManifest = Join-Path $PluginRoot ".codex-plugin/plugin.json"
+    $MarketplacePath = Join-Path $Root ".agents/plugins/marketplace.json"
+    if (-not (Test-Path -LiteralPath $PluginManifest -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $MarketplacePath -PathType Leaf)) {
+        throw "Codex plugin package is incomplete"
+    }
+
+    $Plugin = Get-Content -LiteralPath $PluginManifest -Raw | ConvertFrom-Json
+    $Marketplace = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json
+    if ($Plugin.name -ne $CodexPluginName -or $Plugin.skills -ne "./skills/") {
+        throw "Codex plugin manifest is invalid"
+    }
+    if ($Marketplace.name -ne $CodexMarketplaceName -or
+        -not ($Marketplace.plugins | Where-Object { $_.name -eq $CodexPluginName })) {
+        throw "Codex marketplace manifest is invalid"
+    }
+
+    foreach ($Skill in @("autonomous-sdlc", "build-product", "grill-me", "grilling", "maintenance-check", "process-feedback")) {
+        if (-not (Test-Path -LiteralPath (Join-Path $PluginRoot "skills/$Skill/SKILL.md") -PathType Leaf)) {
+            throw "Codex plugin is missing required skill: $Skill"
+        }
+    }
+    Write-Host "validated Codex plugin package"
+}
+
+function Test-CodexSkills {
+    if ($DryRun) {
+        Write-Host "would verify required Codex skills in $(Join-Path $TargetHome '.agents/skills')"
+        return
+    }
+
+    $RequiredSkills = @(
+        "autonomous-sdlc",
+        "build-product",
+        "grill-me",
+        "grilling",
+        "maintenance-check",
+        "process-feedback"
+    )
+    foreach ($Skill in $RequiredSkills) {
+        $SkillPath = Join-Path $TargetHome ".agents/skills/$Skill/SKILL.md"
+        if (-not (Test-Path -LiteralPath $SkillPath -PathType Leaf)) {
+            throw "Missing required Codex skill after installation: $Skill"
+        }
+    }
+    Write-Host "verified 6 required Codex skills"
+}
+
+function Install-CodexPlugin {
+    $MarketplacePath = Join-Path $Root ".agents/plugins/marketplace.json"
+    $PluginManifest = Join-Path $Root "plugins/$CodexPluginName/.codex-plugin/plugin.json"
+    if (-not (Test-Path -LiteralPath $MarketplacePath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $PluginManifest -PathType Leaf)) {
+        throw "Codex plugin package is incomplete; run scripts/validate-codex-plugin.sh"
+    }
+
+    if ($DryRun) {
+        Write-Host "would register Codex marketplace $Root"
+        Write-Host "would install Codex plugin ${CodexPluginName}@${CodexMarketplaceName}"
+        return
+    }
+
+    if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
+        if ($env:SDLC_INSTALL_HOME) {
+            Write-Host "skipped Codex plugin registration in isolated install: codex CLI not found"
+            return
+        }
+        throw "codex CLI is required to register the plugin but was not found in PATH"
+    }
+
+    if ($env:CODEX_HOME) {
+        New-Item -ItemType Directory -Path $env:CODEX_HOME -Force | Out-Null
+    }
+
+    & codex plugin marketplace add $Root --json
+    if ($LASTEXITCODE -ne 0) { throw "Failed to register Codex marketplace" }
+    & codex plugin add "${CodexPluginName}@${CodexMarketplaceName}" --json
+    if ($LASTEXITCODE -ne 0) { throw "Failed to install Codex plugin" }
+    $PluginList = (& codex plugin list | Out-String)
+    if ($LASTEXITCODE -ne 0 -or
+        $PluginList -notmatch [regex]::Escape("${CodexPluginName}@${CodexMarketplaceName}") -or
+        $PluginList -notmatch "installed, enabled") {
+        throw "Codex plugin installation could not be verified`n$PluginList"
+    }
+    Write-Host "verified Codex plugin ${CodexPluginName}@${CodexMarketplaceName}"
 }
 
 function Install-Gemini {

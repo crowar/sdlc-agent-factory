@@ -1,0 +1,35 @@
+{
+  "name": "sdlc-agent-factory",
+  "version": "1.0.0+codex.20260830165216",
+  "description": "Autonomous software delivery workflows, discovery, maintenance, and feedback triage for Codex.",
+  "author": {
+    "name": "SDLC Agent Factory contributors",
+    "url": "https://github.com/crowar/sdlc-agent-factory"
+  },
+  "homepage": "https://github.com/crowar/sdlc-agent-factory",
+  "repository": "https://github.com/crowar/sdlc-agent-factory",
+  "keywords": [
+    "sdlc",
+    "multi-agent",
+    "delivery",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SDLC Agent Factory",
+    "shortDescription": "Run a verified autonomous software delivery lifecycle.",
+    "longDescription": "Adds product discovery, autonomous SDLC orchestration, maintenance checks, and feedback triage with durable artifacts and independent verification.",
+    "developerName": "SDLC Agent Factory contributors",
+    "category": "DeveloperTools",
+    "capabilities": [
+      "Workflow",
+      "Multi-agent",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Interview me, then deliver this product autonomously.",
+      "Run a maintenance check for this repository.",
+      "Triage this feedback and update the backlog."
+    ]
+  }
+}

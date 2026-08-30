@@ -16,6 +16,8 @@ runtime delegation API.
   skills/                        3 самодостаточных workflow skills
 .codex/
   skills/autonomous-sdlc/        Codex-native orchestrator и routing protocol
+.agents/plugins/marketplace.json локальный marketplace Codex
+plugins/sdlc-agent-factory/      устанавливаемый Codex plugin со всеми skills
 sdlc.skills.yaml                 декларативный реестр stage-specific skills
 sdlc.roles.yaml                  необязательные role briefs для Codex subagents
 docs/                            артефакты пайплайна (source of truth)
@@ -88,7 +90,7 @@ Skills используют открытый формат `SKILL.md`, поэто
 | Инструмент | Skills | Agents |
 |---|---|---|
 | Copilot CLI | `~/.copilot/skills/` | нативно в `~/.copilot/agents/*.agent.md` |
-| Codex CLI | `~/.agents/skills/` | orchestrator динамически вызывает runtime subagents |
+| Codex CLI | plugin + `~/.agents/skills/` fallback | orchestrator динамически вызывает runtime subagents |
 | Gemini CLI | `~/.gemini/skills/` | нативно в `~/.gemini/agents/*.md` |
 | Junie CLI | `~/.junie/skills/` | нативно в `~/.junie/agents/*.md` |
 
@@ -118,7 +120,27 @@ stage gate и продолжает выполнение. Так же работ�
 Установите skills и перезапустите сессию Codex, чтобы обновился каталог:
 
 ```bash
-./scripts/install-global.sh codex
+./scripts/install-global.sh codex --force
+```
+
+Команда выполняет полную установку Codex за один запуск:
+
+- регистрирует repo-local marketplace `sdlc-agent-factory-local`;
+- устанавливает и включает plugin `sdlc-agent-factory`;
+- устанавливает 6 skills в `~/.agents/skills` как совместимый fallback;
+- добавляет role briefs оркестратору;
+- проверяет наличие всех обязательных skills и статус plugin.
+
+Установка идемпотентна: повторный запуск с `--force` обновляет ссылки и plugin.
+Если `codex` отсутствует в `PATH`, обычная установка завершается ошибкой вместо
+ложного сообщения об успехе. После установки откройте новую задачу Codex; если
+каталог не обновился автоматически, полностью перезапустите Codex.
+
+Проверить результат вручную:
+
+```bash
+codex plugin list
+./scripts/validate-codex-plugin.sh
 ```
 
 Затем попросите Codex выполнить `$autonomous-sdlc` или `$build-product`. При

@@ -1,0 +1,20 @@
+{
+  "name": "sdlc-agent-factory-local",
+  "interface": {
+    "displayName": "Sdlc Agent Factory Local"
+  },
+  "plugins": [
+    {
+      "name": "sdlc-agent-factory",
+      "source": {
+        "source": "local",
+        "path": "./plugins/sdlc-agent-factory"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "DeveloperTools"
+    }
+  ]
+}

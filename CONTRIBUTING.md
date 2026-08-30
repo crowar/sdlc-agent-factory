@@ -38,7 +38,8 @@ refactor(api)!: replace legacy configuration format
 Перед отправкой изменений проверьте синтаксис и dry-run установщика:
 
 ```bash
-bash -n scripts/install-global.sh .github/scripts/check-commit-messages.sh
+bash -n scripts/install-global.sh scripts/validate-codex-plugin.sh .github/scripts/check-commit-messages.sh
+./scripts/validate-codex-plugin.sh
 ./scripts/install-global.sh all --dry-run
 pwsh -NoProfile -File ./scripts/install-global.ps1 -Provider all -DryRun
 ```

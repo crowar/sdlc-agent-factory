@@ -54,6 +54,9 @@ jobs:
       - name: Validate Codex SDLC contract
         run: ./scripts/validate-sdlc.sh
 
+      - name: Validate Codex plugin package
+        run: ./scripts/validate-codex-plugin.sh
+
       - name: Smoke-test Bash installer
         env:
           SDLC_INSTALL_HOME: ${{ runner.temp }}/installer-home
